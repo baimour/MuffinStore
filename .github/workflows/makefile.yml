@@ -1,0 +1,55 @@
+name: Build MuffinStore
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build MuffinStore
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Checkout theos/theos
+        uses: actions/checkout@main
+        with:
+          repository: theos/theos
+          ref: master
+          submodules: recursive
+          path: theos
+
+      - name: Checkout theos/sdks
+        uses: actions/checkout@main
+        with:
+          repository: theos/sdks
+          ref: master
+          sparse-checkout: iPhoneOS16.5.sdk
+          path: theos/sdks
+
+      - name: Ensure main utils are installed
+        uses: dhinakg/procursus-action@main
+        with:
+          packages: coreutils make xz ldid
+
+      - name: Setup Environment Variables
+        run: |
+          echo "TARGET=iphone:clang:16.5:15.0" >> $GITHUB_ENV
+          echo "INSTALL_TARGET_PROCESSES=MuffinStore" >> $GITHUB_ENV
+          echo "ARCHS=arm64" >> $GITHUB_ENV
+          echo "PACKAGE_VERSION=$(THEOS_PACKAGE_BASE_VERSION)" >> $GITHUB_ENV
+          echo "PACKAGE_FORMAT=ipa" >> $GITHUB_ENV
+          echo "GO_EASY_ON_ME=1" >> $GITHUB_ENV
+
+      - name: Build MuffinStore
+        run: |
+          export THEOS=theos
+          make -C $(GITHUB_WORKSPACE) TARGET=iphone:clang:16.5:15.0 INSTALL_TARGET_PROCESSES=MuffinStore ARCHS=arm64 PACKAGE_VERSION=$(THEOS_PACKAGE_BASE_VERSION) PACKAGE_FORMAT=ipa GO_EASY_ON_ME=1 APPLICATION_NAME=MuffinStore MuffinStore_FILES='$(wildcard *.m)' MuffinStore_FRAMEWORKS=UIKit CoreGraphics CoreServices MuffinStore_PRIVATE_FRAMEWORKS=Preferences StoreKitUI MuffinStore_CFLAGS=-fobjc-arc MuffinStore_CODESIGN_FLAGS=-Sentitlements.plist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: MuffinStore-artifact
+          path: packages/*.ipa
