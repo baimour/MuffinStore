@@ -1,4 +1,4 @@
-name: Build MuffinStore
+name: Build
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: Build MuffinStore
+    name: Build
     runs-on: macos-latest
 
     steps:
@@ -26,33 +26,24 @@ jobs:
         with:
           repository: theos/sdks
           ref: master
-          sparse-checkout: iPhoneOS16.5.sdk
+          nugget-checkout: iPhoneOS16.5.sdk
           path: theos/sdks
 
       - name: Ensure main utils are installed
         uses: dhinakg/procursus-action@main
         with:
           packages: coreutils make xz ldid
-
-      - name: Setup Environment Variables
+          
+      - name: Build
         run: |
-          echo "CPATH=:/opt/procursus/include" >> $GITHUB_ENV
-          echo "LIBRARY_PATH=:/opt/procursus/lib" >> $GITHUB_ENV
-          echo "TARGET=iphone:clang:16.5:15.0" >> $GITHUB_ENV
-          echo "INSTALL_TARGET_PROCESSES=MuffinStore" >> $GITHUB_ENV
-          echo "ARCHS=arm64" >> $GITHUB_ENV
-          echo "PACKAGE_VERSION=1" >> $GITHUB_ENV  # 假设的版本号，你需要根据实际情况设置
-          echo "PACKAGE_FORMAT=ipa" >> $GITHUB_ENV
-          echo "GO_EASY_ON_ME=1" >> $GITHUB_ENV
+          export THEOS=theos
 
-      - name: Build MuffinStore
-        run: |
-          export THEOS=`pwd`/theos
-          make -C $(GITHUB_WORKSPACE) TARGET=$TARGET INSTALL_TARGET_PROCESSES=$INSTALL_TARGET_PROCESSES ARCHS=$ARCHS PACKAGE_VERSION=$PACKAGE_VERSION PACKAGE_FORMAT=$PACKAGE_FORMAT GO_EASY_ON_ME=$GO_EASY_ON_ME APPLICATION_NAME=MuffinStore MuffinStore_FILES='$(wildcard *.m)' MuffinStore_FRAMEWORKS=UIKit CoreGraphics CoreServices MuffinStore_PRIVATE_FRAMEWORKS=Preferences StoreKitUI MuffinStore_CFLAGS=-fobjc-arc MuffinStore_CODESIGN_FLAGS=-Sentitlements.plist
-        shell: bash
+          git submodule update --init
+          bash get_libraries.sh
+          bash ipabuild.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@main
         with:
-          name: MuffinStore-artifact
-          path: packages/*.ipa
+          name: artifact
+          path: build/*.ipa
