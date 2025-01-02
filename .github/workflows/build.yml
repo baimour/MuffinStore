@@ -36,17 +36,20 @@ jobs:
 
       - name: Setup Environment Variables
         run: |
+          echo "CPATH=:/opt/procursus/include" >> $GITHUB_ENV
+          echo "LIBRARY_PATH=:/opt/procursus/lib" >> $GITHUB_ENV
           echo "TARGET=iphone:clang:16.5:15.0" >> $GITHUB_ENV
           echo "INSTALL_TARGET_PROCESSES=MuffinStore" >> $GITHUB_ENV
           echo "ARCHS=arm64" >> $GITHUB_ENV
-          echo "PACKAGE_VERSION=$(THEOS_PACKAGE_BASE_VERSION)" >> $GITHUB_ENV
+          echo "PACKAGE_VERSION=1" >> $GITHUB_ENV  # 假设的版本号，你需要根据实际情况设置
           echo "PACKAGE_FORMAT=ipa" >> $GITHUB_ENV
           echo "GO_EASY_ON_ME=1" >> $GITHUB_ENV
 
       - name: Build MuffinStore
         run: |
-          export THEOS=theos
-          make -C $(GITHUB_WORKSPACE) TARGET=iphone:clang:16.5:15.0 INSTALL_TARGET_PROCESSES=MuffinStore ARCHS=arm64 PACKAGE_VERSION=$(THEOS_PACKAGE_BASE_VERSION) PACKAGE_FORMAT=ipa GO_EASY_ON_ME=1 APPLICATION_NAME=MuffinStore MuffinStore_FILES='$(wildcard *.m)' MuffinStore_FRAMEWORKS=UIKit CoreGraphics CoreServices MuffinStore_PRIVATE_FRAMEWORKS=Preferences StoreKitUI MuffinStore_CFLAGS=-fobjc-arc MuffinStore_CODESIGN_FLAGS=-Sentitlements.plist
+          export THEOS=`pwd`/theos
+          make -C $(GITHUB_WORKSPACE) TARGET=$TARGET INSTALL_TARGET_PROCESSES=$INSTALL_TARGET_PROCESSES ARCHS=$ARCHS PACKAGE_VERSION=$PACKAGE_VERSION PACKAGE_FORMAT=$PACKAGE_FORMAT GO_EASY_ON_ME=$GO_EASY_ON_ME APPLICATION_NAME=MuffinStore MuffinStore_FILES='$(wildcard *.m)' MuffinStore_FRAMEWORKS=UIKit CoreGraphics CoreServices MuffinStore_PRIVATE_FRAMEWORKS=Preferences StoreKitUI MuffinStore_CFLAGS=-fobjc-arc MuffinStore_CODESIGN_FLAGS=-Sentitlements.plist
+        shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@main
